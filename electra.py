@@ -27,6 +27,7 @@ def electra(alternatives: list[Laptop], autocode=False) -> list[list[str]]:
     res = [["---" for i in range(n)] for j in range(n)]
 
     for i in range(n):
+        res[i][i] = "xxx"
         for j in range(i+1, n):
             alt1 = alternatives[i].get_values()
             alt2 = alternatives[j].get_values()
@@ -94,16 +95,16 @@ def electra(alternatives: list[Laptop], autocode=False) -> list[list[str]]:
                 dji = float('inf')
 
             if dij > 1:
-                res[i][j] = dij
+                res[i][j] = str(dij)
             if dji > 1:
-                res[j][i] = dji
+                res[j][i] = str(dji)
 
 
             if autocode:
                 joined_pji = ' + '.join(map(str, pij))
                 joined_nji = ' + '.join(map(str, nij))
 
-                print(f"\nРассмотрим альтернативы {i+1} и {j+1}:")
+                print(f"Рассмотрим альтернативы {i+1} и {j+1}:")
                 print(f"P{i+1}{j+1} = {joined_pji} = {sum(pij)};")
                 print(f"N{i+1}{j+1} = {joined_nji} = {sum(nij)};")
 
@@ -118,17 +119,25 @@ def electra(alternatives: list[Laptop], autocode=False) -> list[list[str]]:
 
                 print(f"D{j+1}{i+1} = P{i+1}{j+1}/N{i+1}{j+1} = {sum(nij)}/{sum(pij)} = {dji}", end='')
                 if dji < 1:
-                    print(" < 1 - отбрасываем")
+                    print(" < 1 - отбрасываем\n")
                 elif dji > 1:
-                    print(" > 1 - принимаем")
+                    print(" > 1 - принимаем\n")
 
     return res
 
 
-def reduce_matrix(matrix: list[list[str]], threshold: float) -> list[list[str]]:
+def reduce_matrix(matrix: list[list[str]], threshold: float):
     """Разрежение матрицы предпочтений с учетом порога"""
-    pass
-
+    n = len(matrix)
+    for i in range(n):
+        for j in range(n):
+            try:
+                value = float(matrix[i][j])
+                if value < threshold:
+                    matrix[i][j] = '---'
+            except ValueError: # если встретили "xxx" или "---"
+                continue
+             
 
 def print_matrix(matrix: list[list[str]]):
     n = len(matrix)
@@ -137,6 +146,29 @@ def print_matrix(matrix: list[list[str]]):
         for j in range(n):
             print(matrix[i][j], end=" ")
         print(i+1)
+    print()
+
+
+def generate_graph(matrix: list[list[str]]):
+    """Построение графа по матрице и сохранение в .dot файл"""
+    res = ""
+
+    n = len(matrix)
+    for i in range(len(matrix)):
+        for j in range(len(matrix)):
+            try:
+                value = float(matrix[i][j])
+                res += f'    {i+1} -> {j+1}\n'
+                
+            except ValueError: # если встретили "xxx" или "---"
+                continue
+
+    with open("electra_graph.dot", 'w', encoding='utf-8') as f:
+        f.write("digraph preferences{\n")
+        f.write(res)
+        f.write('}')
+
+    print("Граф построен: electra_grapt.dot")
 
 
 def main():
@@ -151,9 +183,18 @@ def main():
         Laptop("H", price=15, processor=10, battery=7, weight=10, backlight=10),
         Laptop("I", price=7, processor=5, battery=10, weight=5, backlight=5),
     ]
+    treshold = 2.8
 
     matrix = electra(alternatives, autocode=True)
+
+    print("Матрица предпочтений:\n")
     print_matrix(matrix)
+
+    reduce_matrix(matrix, 2.8)
+    print(f"Разреженная матрица предпочтений (порог С = {treshold})\n")
+    print_matrix(matrix)
+
+    generate_graph(matrix)
 
 
 if __name__ == "__main__":
