@@ -171,6 +171,39 @@ def generate_graph(matrix: list[list[str]]):
     print("Граф построен: electra_grapt.dot")
 
 
+def choose_best(matrix: list[list[str]]):
+    n = len(matrix)
+    res = []
+
+
+    for i in range(n):
+        row = matrix[i].copy()
+        col = [matrix[j][i] for j in range(n)].copy()
+
+        bestCount = 0
+        worstCount = 0
+
+        for el in row:
+            try:
+                value = float(el)
+                bestCount += 1
+            except ValueError:
+                continue
+
+        for el in col:
+            try:
+                value = float(el)
+                worstCount += 1
+            except ValueError:
+                continue
+
+        res.append([i+1, bestCount, worstCount])
+        
+    res.sort(key = lambda x: -x[1])
+    print('\n', res)
+    print(f"Лучшая альтернатива: {res[0][0]}")
+
+
 def main():
     alternatives = [
         Laptop("A", price=7, processor=10, battery=7, weight=5, backlight=10),
@@ -185,7 +218,7 @@ def main():
     ]
     treshold = 2.8
 
-    matrix = electra(alternatives, autocode=True)
+    matrix = electra(alternatives, autocode=False)
 
     print("Матрица предпочтений:\n")
     print_matrix(matrix)
@@ -195,6 +228,8 @@ def main():
     print_matrix(matrix)
 
     generate_graph(matrix)
+
+    choose_best(matrix)
 
 
 if __name__ == "__main__":
